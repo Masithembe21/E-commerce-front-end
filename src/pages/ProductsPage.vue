@@ -46,6 +46,7 @@
 <script>
 import ProductCard from "@/components/ProductCard.vue";
 import productsService from "@/services/productsService";
+import CartService from "@/services/CartService";
 
 export default {
   components: {
@@ -78,9 +79,74 @@ export default {
       this.$router.push(`/products/${productId}`); // Navigate to product details page
     },
     // Handle the 'Add to Cart' button click
-    handleAddToCart(productId) {
-      console.log(`Adding product ${productId} to cart`); // Log the addition for now (can integrate with a cart service)
-    },
+    async handleAddToCart(productId) {
+  try {
+    // Fetch all products to find the specific product
+    const productsResponse = await productsService.getAllProducts();
+    const product = productsResponse.find(item => item.id === productId); // Find the specific product
+
+    if (product) {
+      console.log(`Found product:`, product); // Log the found product details
+
+      // Check if the cart exists for the user
+      const userId = this.$store.state.userId; // Replace with the method to get the current user's ID
+      console.log(`Fetching cart for user ID: ${userId}`);
+      const cartResponse = await CartService.getCartsByUserId(userId);
+
+      if (cartResponse.length > 0) {
+        console.log(`Cart found for user ID ${userId}:`, cartResponse); // Log the existing cart details
+        // If a cart exists, add/update the cart item
+        const cartId = cartResponse[0].id; // Assuming the user can have only one active cart
+        console.log(`Using cart ID: ${cartId}`);
+
+        const existingCartItems = await CartService.getCartItemsByCartId(cartId);
+        console.log(`Existing cart items:`, existingCartItems);
+
+        const existingItem = existingCartItems.find(item => item.productId === product.id);
+        if (existingItem) {
+          // Update the quantity if the item already exists in the cart
+          existingItem.quantity += 1; // Increment the quantity
+          console.log(`Updating quantity for existing item:`, existingItem);
+          await CartService.updateCartItem(existingItem);
+          alert(`Updated quantity for ${product.name} in the cart!`);
+        } else {
+          // Create the cart item object based on the product details
+          const cartItem = {
+            productId: product.id,
+            quantity: 1, // Set the initial quantity
+          };
+          console.log(`Creating new cart item:`, cartItem);
+
+          // Use the createCartItem service to add the product to the cart
+          await CartService.createCartItem(cartItem);
+          alert(`Product ${product.name} has been added to the cart!`);
+        }
+      } else {
+        console.log(`No existing cart found for user ID ${userId}. Creating a new cart.`);
+        // Create a new cart if it doesn't exist
+        const newCart = { userId }; // Adjust as necessary for your cart structure
+        const createdCart = await CartService.createCart(newCart); // Create the cart
+        console.log(`New cart created:`, createdCart);
+        
+        const cartItem = {
+          productId: product.id,
+          quantity: 1, // Set the initial quantity
+        };
+        console.log(`Adding product to the new cart:`, cartItem);
+
+        // Use the createCartItem service to add the product to the new cart
+        await CartService.createCartItem(cartItem);
+        alert(`Product ${product.name} has been added to a new cart!`);
+      }
+    } else {
+      console.error(`Product with ID ${productId} not found`);
+    }
+  } catch (error) {
+    console.error("Error adding product to cart:", error);
+  }
+}
+
+
   },
 };
 </script>

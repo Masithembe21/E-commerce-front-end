@@ -37,6 +37,7 @@
 <script>
 import productsService from "@/services/productsService"; // Import the products service
 import heart from "@/assets/heart.svg";
+import CartService from "@/services/CartService";
 
 export default {
   name: "ProductDetailPage",
@@ -58,13 +59,18 @@ export default {
       }
     },
     // Method to handle adding the product to the cart
-    addToCart() {
-      alert(`${this.product.name} added to cart!`);
-      // Logic for adding product to the cart would go here
+    async addToCart() {
+      try {
+        await CartService.createCart(this.product.id); 
+        console.log(this.product);// Call the cart service to add the product
+        alert(`${this.product.name} added to cart!`); // Notify the user
+      } catch (error) {
+        alert("Failed to add to cart. Please try again."); // Handle error
+      }
     },
-    //addWish list methods here
+    // Add to wishlist method
     addToWish() {
-      alert.apply(`${this.product.name} added to Wish List`);
+      alert(`${this.product.name} added to Wish List`);
     },
   },
   mounted() {

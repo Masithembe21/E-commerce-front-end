@@ -1,35 +1,61 @@
 <template>
   <div>
-    <h1>Shopping Cart</h1>
-    <div v-if="cartItems.length > 0">
-      <div class="product-container" v-for="product in cartItems" :key="product.id">
-        <img class="product-image" :src="product.imageName" />
-        <div class="details-wrap">
-          <h3>{{ product.name }}</h3>
-          <p>{{ product.price }}</p>
-        </div>
-        <button class="remove-button">Remove from Cart</button>
-      </div>
-      <button class="checkout-button">Proceed to Checkout</button>
+    <h1>Your Shopping Cart</h1>
+    <div v-if="cartItems.length === 0" class="empty-cart">
+      <p>Your cart is empty.</p>
     </div>
-    <div v-if="cartItems.length === 0">
-      You currently have no items in your cart!
+    <div v-else>
+      <div v-for="item in cartItems" :key="item.id" class="product-container">
+        <img :src="item.image" alt="Product Image" class="product-image" />
+        <div class="details-wrap">
+          <h3>{{ item.name }}</h3>
+          <p>Price: {{ item.price }}</p>
+        </div>
+        <button class="remove-button" @click="removeCartItem(item.id)">Remove</button>
+      </div>
+      <button class="checkout-button" @click="checkout">Checkout</button>
     </div>
   </div>
 </template>
 
 <script>
-//import { cartItems } from '../temp-data';
+import CartService from '@/services/CartService'; // Adjust the path as needed
 
 export default {
   name: "ShoppingCartPage",
   data() {
     return {
-      //cartItems,
-    }
-  }
-}
+      cartItems: [],
+    };
+  },
+  created() {
+    this.fetchCartItems();
+  },
+  methods: {
+    async fetchCartItems() {
+      try {
+        const response = await CartService.getAllCartItems(); // Fetch all cart items
+        this.cartItems = response; // Directly assign the response data
+      } catch (error) {
+        console.error("Error fetching cart items:", error);
+      }
+    },
+    async removeCartItem(cartItemId) {
+      try {
+        await CartService.deleteCartItem(cartItemId); // Delete the cart item
+        this.cartItems = this.cartItems.filter(item => item.id !== cartItemId); // Update the cart items list
+      } catch (error) {
+        console.error("Error removing cart item:", error);
+      }
+    },
+    checkout() {
+      // Implement checkout logic
+      alert('Proceeding to checkout!');
+    },
+  },
+};
 </script>
+
 
 <style scoped>
 h1 {
@@ -87,5 +113,10 @@ h1 {
   outline: 0;
   padding: 16px;
   margin-top: 16px;
+}
+
+.empty-cart {
+  text-align: center;
+  margin-top: 20px;
 }
 </style>
